@@ -11,7 +11,7 @@ export function getDaysAll(mat: MaterialBurn) {
 }
 
 // Amount to deliver to reach the resupply target, counting the base stock,
-// inbound cargo AND the warehouse stock on the same planet (same basis as Days All).
+// inbound cargo AND the warehouse stock on the same planet (same basis as Days w/WAR).
 export function computeNeedAll(mat: MaterialBurn, resupplyDays: number) {
   if (mat.dailyAmount >= 0) {
     return 0;

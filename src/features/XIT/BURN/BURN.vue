@@ -394,8 +394,8 @@ function formatBurnTable(burns: PlanetBurn[]) {
     return formatBurnTableOfficial(burns);
   }
   const header = io.value
-    ? `Planet\tTicker\tIn\tOut\tNet\tInv\tDays\tDays All\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
-    : `Planet\tTicker\tBurn/day\tInv\tDays\tDays All\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
+    ? `Planet\tTicker\tIn\tOut\tNet\tInv\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
+    : `Planet\tTicker\tBurn/day\tInv\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
   const lines = [header];
   const round = (x: number) => Math.round(x * 1000) / 1000;
   for (const planet of burns) {
@@ -466,7 +466,7 @@ function copyBurnTable() {
         v-model="cosm"
         horizontal
         :class="$style.radioItemWithTooltip"
-        data-tooltip="COSM extras: more columns (Days All, Need, home station stock, Buy), sorting and resizing, partner ships, purchase contracts and managed bases. Off = same as rPrUn."
+        data-tooltip="COSM extras: more columns (Days w/WAR, Need, home station stock, Buy), sorting and resizing, partner ships, purchase contracts and managed bases. Off = same as rPrUn."
         data-tooltip-position="bottom">
         COSM
       </RadioItem>
@@ -646,7 +646,7 @@ function copyBurnTable() {
             :style="colStyle('daysAll')"
             @click="onSortClick('daysAll')">
             <span data-tooltip="Days left with the stock of the warehouse on the same planet."
-              >Days All{{ sortArrow('daysAll') }}</span
+              >Days w/WAR{{ sortArrow('daysAll') }}</span
             >
             <span
               :class="$style.resizer"
@@ -665,7 +665,7 @@ function copyBurnTable() {
               <Tooltip
                 position="bottom"
                 tooltip="How much to deliver to reach the resupply target, counting the base, inbound
-                 cargo and the warehouse on the same planet (same basis as Days All)." />
+                 cargo and the warehouse on the same planet (same basis as Days w/WAR)." />
             </InlineFlex>
             <span
               :class="$style.resizer"
