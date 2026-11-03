@@ -1,5 +1,5 @@
 import $style from './screen-controls-compact.module.css';
-import HeadItem from './screen-tab-bar/HeadItem.vue';
+import HeadItem from '@src/features/basic/screen-tab-bar/HeadItem.vue';
 
 const storageKey = 'rprun-screen-controls-collapsed';
 
