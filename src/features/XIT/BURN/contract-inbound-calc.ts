@@ -114,27 +114,33 @@ export function getPurchaseInbound(
     if (!ACTIVE.has(contract.status)) {
       continue;
     }
+    const byId = new Map(contract.conditions.map(x => [x.id, x]));
     for (const condition of contract.conditions) {
-      if (
-        !PURCHASE_TYPES.has(condition.type) ||
-        condition.party === contract.party ||
-        condition.status === 'FULFILLED'
-      ) {
+      if (condition.status === 'FULFILLED') {
         continue;
       }
+      const mine = condition.party === contract.party;
       const quantity = condition.quantity;
+      let amount = 0;
+      if (!mine && PURCHASE_TYPES.has(condition.type)) {
+        amount = quantity?.amount ?? 0;
+      } else if (mine && condition.type === 'PICKUP') {
+        // Provided by the seller, still waiting for my pickup.
+        const ready = condition.dependencies.every(id => byId.get(id)?.status === 'FULFILLED');
+        amount = ready ? (quantity?.amount ?? 0) - (condition.pickedUp?.amount ?? 0) : 0;
+      }
       const planet = naturalIdOf(condition.address);
-      if (!quantity || quantity.amount <= 0 || !planet) {
+      if (!quantity || amount <= 0 || !planet) {
         continue;
       }
       const ticker = quantity.material.ticker;
       const entry = (result[planet] ??= { totals: {}, lines: [] });
-      entry.totals[ticker] = (entry.totals[ticker] ?? 0) + quantity.amount;
+      entry.totals[ticker] = (entry.totals[ticker] ?? 0) + amount;
       entry.lines.push({
         contract: contract.localId,
         partner: contract.partner.name,
         ticker,
-        amount: quantity.amount,
+        amount,
       });
     }
   }

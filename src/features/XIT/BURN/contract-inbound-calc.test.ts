@@ -120,6 +120,35 @@ describe('getPurchaseInbound', () => {
     ).toEqual({ SF: 3000 });
   });
 
+  it('keeps provided goods that wait for my pickup', () => {
+    const contract = {
+      localId: 'GR65BD6',
+      partner: { name: 'Seller' },
+      party: 'CUSTOMER',
+      status: 'PARTIALLY_FULFILLED',
+      conditions: [
+        cond({
+          id: 'goods',
+          type: 'PROVISION',
+          party: 'PROVIDER',
+          status: 'FULFILLED',
+          quantity: qty('SF', 3000),
+          address: at('OZ-189c'),
+        }),
+        cond({
+          id: 'pick',
+          type: 'PICKUP',
+          party: 'CUSTOMER',
+          dependencies: ['goods'],
+          quantity: qty('SF', 3000),
+          pickedUp: qty('SF', 1000),
+          address: at('OZ-189c'),
+        }),
+      ],
+    } as unknown as PrunApi.Contract;
+    expect(getPurchaseInbound([contract], naturalIdOf)['OZ-189c'].totals).toEqual({ SF: 2000 });
+  });
+
   it('ignores delivered goods, contracts not accepted and my own sales', () => {
     expect(
       getPurchaseInbound([purchase('CLOSED', 'DELIVERY', 'PROVIDER', 'FULFILLED')], naturalIdOf),
