@@ -137,7 +137,8 @@ function onTileReady(tile: PrunTile) {
 }
 
 function init() {
-  watch(() => contractsStore.all.value, recordContracts, { immediate: true });
+  // Also runs when a player name arrives later (FIO or typed), as recordContracts reads it.
+  watchEffect(() => recordContracts(contractsStore.all.value));
   tiles.observe('CONTD', onTileReady);
 }
 
