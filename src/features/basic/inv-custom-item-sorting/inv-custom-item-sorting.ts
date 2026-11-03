@@ -212,8 +212,13 @@ function sortInventory(
     return;
   }
 
-  if (sorting === priceSortingMode || sorting === valueSortingMode) {
-    sortByPrice(inventory, sorting === valueSortingMode, reverse, store);
+  // PRX and VAL are built-in modes without categories: they sort by CX price instead.
+  if (sorting === priceSortingMode) {
+    sortByPrice(inventory, 'unit', reverse, store);
+    return;
+  }
+  if (sorting === valueSortingMode) {
+    sortByPrice(inventory, 'stock', reverse, store);
     return;
   }
 
@@ -302,11 +307,13 @@ function sortInventory(
   }
 }
 
-// Sorts by CX unit price (PRX) or by total stock value, price x amount (VAL).
-// Highest first; clicking again reverses. Prices follow XIT SETTINGS > Pricing.
+// Sorts the items, highest first (clicking the mode again reverses):
+// - 'unit' (PRX): by the CX price of one unit;
+// - 'stock' (VAL): by the value of the stock in this inventory, unit price x amount.
+// Items without a price go last. Prices follow XIT SET > Pricing.
 function sortByPrice(
   inventory: Element,
-  byValue: boolean,
+  by: 'unit' | 'stock',
   reverse: boolean,
   store: PrunApi.Store | undefined,
 ) {
@@ -323,7 +330,7 @@ function sortByPrice(
     const price = getPrice(ticker);
     let key = -1;
     if (price !== undefined) {
-      key = byValue ? price * (amounts.get(ticker) ?? 0) : price;
+      key = by === 'stock' ? price * (amounts.get(ticker) ?? 0) : price;
     }
     return { div, ticker, key };
   });
