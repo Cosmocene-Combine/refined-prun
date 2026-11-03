@@ -6,7 +6,7 @@ import { FillStack, ShipBay, SizeLookup, cargoLoad, gameSize } from './ship-fill
 export interface BaseMaterial {
   // The XIT BURN Inv value: base stock, in flight to it and still to come by contract.
   inv: number;
-  // Inv plus the planet warehouse: what the base can use, like XIT BURN Days All.
+  // Inv plus the planet warehouse: what the base can use, like XIT BURN Days w/WAR.
   stock: number;
   // Units used per day (positive). 0 when the base does not use it.
   usePerDay: number;

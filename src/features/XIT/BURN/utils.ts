@@ -101,7 +101,7 @@ export function getWarehouseAmounts(naturalId: string) {
   return amounts;
 }
 
-// Days All of the most urgent net-consumed material.
+// Days w/WAR of the most urgent net-consumed material.
 export function countDaysAll(burn: BurnValues) {
   let days = 1000;
   for (const key of Object.keys(burn)) {

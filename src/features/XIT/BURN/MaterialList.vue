@@ -9,7 +9,12 @@ const { burn } = defineProps<{ burn: PlanetBurn }>();
 const sortBy = useTileState('sortBy');
 const sortDesc = useTileState('sortDesc');
 
-const sorted = computed(() => getSortedTickers(burn, sortBy.value, sortDesc.value));
+const cosm = useTileState('cosm');
+
+// Sorting is a COSM extra: without it, the rPrUn order.
+const sorted = computed(() =>
+  cosm.value ? getSortedTickers(burn, sortBy.value, sortDesc.value) : getSortedTickers(burn),
+);
 </script>
 
 <template>

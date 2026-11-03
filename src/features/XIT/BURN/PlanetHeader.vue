@@ -33,6 +33,10 @@ const inboundTooltip = computed(() =>
 const days = computed(() => countDays(burn.burn));
 const daysAll = computed(() => countDaysAll(burn.burn));
 const { show, nameColspan, actionColspan } = useBurnColumns();
+// Off: the rPrUn header (icon, inv, burn, need under the name, then days, then buttons).
+const cosm = useTileState('cosm');
+const io = useTileState('io');
+const officialNameColspan = computed(() => (io.value ? 6 : 4));
 
 // Partner ships delivering here under an accepted shipping contract (purple icon).
 const excludeContractInbound = useTileState('excludeContractInbound');
@@ -154,7 +158,41 @@ function toggleInbound() {
 </script>
 
 <template>
-  <tr :class="$style.row">
+  <tr v-if="!cosm" :class="$style.row">
+    <td
+      :colspan="officialNameColspan"
+      :class="$style.cell"
+      @click="onClick"
+      @contextmenu.prevent="burn.naturalId && planetContextMenu.showMenu($event, burn.naturalId)">
+      <span v-if="hasMinimize" :class="$style.minimize">
+        {{ minimized ? '+' : '-' }}
+      </span>
+      <span>{{ burn.planetName }}</span>
+      <button
+        v-if="hasInboundShips"
+        type="button"
+        :class="[fa.solid, $style.officialInbound, { [$style.inboundExcluded]: !includesInbound }]"
+        :data-tooltip="inboundTooltip"
+        :aria-label="inboundTooltip"
+        :aria-pressed="includesInbound"
+        @click.stop="toggleInbound">
+        {{ '\uf135' }}
+      </button>
+    </td>
+    <DaysCell :days="days" />
+    <td>
+      <div :class="$style.buttons">
+        <PrunButton dark inline @click="showBuffer(`BS ${burn.naturalId}`)">BS</PrunButton>
+        <PrunButton dark inline @click="showBuffer(`INV ${burn.storeId.substring(0, 8)}`)">
+          INV
+        </PrunButton>
+        <PrunButton dark inline @click="showBuffer(`XIT BURNACT ${burn.naturalId}`)">
+          ACT
+        </PrunButton>
+      </div>
+    </td>
+  </tr>
+  <tr v-else :class="$style.row">
     <td
       :colspan="nameColspan"
       :class="$style.cell"
@@ -164,57 +202,66 @@ function toggleInbound() {
         {{ minimized ? '+' : '-' }}
       </span>
       <span>{{ burn.planetName }}</span>
+      <!-- Icon only: yellow when on, so the planet column never changes width. -->
       <button
         v-if="burn.naturalId"
         type="button"
-        :class="[$style.managed, { [$style.managedOn]: isManaged }]"
+        :class="[fa.solid, $style.managed, { [$style.managedOn]: isManaged }]"
         :data-tooltip="managedTooltip"
         :aria-label="managedTooltip"
         :aria-pressed="isManaged"
         @click.stop="toggleManaged">
-        <span :class="fa.solid">{{ '\uf275' }}</span>
-        {{ isManaged ? 'PROD MANAGED' : '' }}
+        {{ '\uf275' }}
       </button>
-      <button
-        v-if="hasInboundShips"
-        type="button"
-        :class="[fa.solid, $style.inbound, { [$style.inboundExcluded]: !includesInbound }]"
-        :data-tooltip="inboundTooltip"
-        :aria-label="inboundTooltip"
-        :aria-pressed="includesInbound"
-        @click.stop="toggleInbound">
-        {{ '\uf135' }}
-      </button>
-      <button
-        v-if="hasContractInbound"
-        type="button"
-        :class="[
-          fa.solid,
-          $style.inbound,
-          $style.partnerShip,
-          { [$style.inboundExcluded]: !includesContractInbound },
-        ]"
-        :data-tooltip="contractInboundTooltip"
-        :aria-label="contractInboundTooltip"
-        :aria-pressed="includesContractInbound"
-        @click.stop="toggleContractInbound">
-        {{ '\uf135' }}
-      </button>
-      <button
-        v-if="hasPurchaseInbound"
-        type="button"
-        :class="[
-          fa.solid,
-          $style.inbound,
-          $style.purchase,
-          { [$style.inboundExcluded]: !includesPurchaseInbound },
-        ]"
-        :data-tooltip="purchaseInboundTooltip"
-        :aria-label="purchaseInboundTooltip"
-        :aria-pressed="includesPurchaseInbound"
-        @click.stop="togglePurchaseInbound">
-        {{ '\uf07a' }}
-      </button>
+      <!-- Fixed slots, right to left: own ship, partner ship, cart. Same place on every row. -->
+      <span :class="$style.icons">
+        <span :class="$style.slot">
+          <button
+            v-if="hasPurchaseInbound"
+            type="button"
+            :class="[
+              fa.solid,
+              $style.inbound,
+              $style.purchase,
+              { [$style.inboundExcluded]: !includesPurchaseInbound },
+            ]"
+            :data-tooltip="purchaseInboundTooltip"
+            :aria-label="purchaseInboundTooltip"
+            :aria-pressed="includesPurchaseInbound"
+            @click.stop="togglePurchaseInbound">
+            {{ '\uf07a' }}
+          </button>
+        </span>
+        <span :class="$style.slot">
+          <button
+            v-if="hasContractInbound"
+            type="button"
+            :class="[
+              fa.solid,
+              $style.inbound,
+              $style.partnerShip,
+              { [$style.inboundExcluded]: !includesContractInbound },
+            ]"
+            :data-tooltip="contractInboundTooltip"
+            :aria-label="contractInboundTooltip"
+            :aria-pressed="includesContractInbound"
+            @click.stop="toggleContractInbound">
+            {{ '\uf135' }}
+          </button>
+        </span>
+        <span :class="$style.slot">
+          <button
+            v-if="hasInboundShips"
+            type="button"
+            :class="[fa.solid, $style.inbound, { [$style.inboundExcluded]: !includesInbound }]"
+            :data-tooltip="inboundTooltip"
+            :aria-label="inboundTooltip"
+            :aria-pressed="includesInbound"
+            @click.stop="toggleInbound">
+            {{ '\uf135' }}
+          </button>
+        </span>
+      </span>
     </td>
     <DaysCell v-if="show.days" :days="days" />
     <DaysCell v-if="show.daysAll" :days="daysAll" />
@@ -249,8 +296,30 @@ function toggleInbound() {
   text-align: center;
 }
 
-.inbound {
+.officialInbound {
   float: right;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: inherit;
+}
+
+/* Right-aligned group of fixed-width slots, so each icon kind lines up across rows. */
+.icons {
+  float: right;
+  display: inline-flex;
+}
+
+.slot {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+}
+
+.inbound {
   /* Keeps the line breaks of the multi-line tooltips. */
   white-space: pre-line;
   border: 0;
@@ -265,32 +334,27 @@ function toggleInbound() {
 /* Partner ship under a shipping contract: purple, next to my own (white) ship. */
 .partnerShip {
   color: #b57edc;
-  margin-right: 6px;
 }
 
 /* Goods bought under a purchase contract: blue cart. */
 .purchase {
   color: #3fa2de;
-  margin-right: 6px;
 }
 
-/* Managed production toggle, next to the planet name. */
+/* Managed production toggle, next to the planet name: grey, yellow when on. */
 .managed {
-  margin-left: 8px;
+  margin-left: 6px;
   border: 0;
-  padding: 0 4px;
+  padding: 0;
   background: none;
   color: #555;
   cursor: pointer;
-  font-size: 10px;
-  font-weight: bold;
+  font-size: 11px;
   line-height: inherit;
 }
 
 .managedOn {
   color: #f7a600;
-  border: 1px solid #f7a600;
-  border-radius: 2px;
 }
 
 .inboundExcluded {

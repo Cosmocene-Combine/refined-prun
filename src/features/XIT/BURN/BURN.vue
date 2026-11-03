@@ -37,6 +37,7 @@ import {
   getWarehouseAmounts,
 } from '@src/features/XIT/BURN/utils';
 import { homeStation } from '@src/core/home-station';
+import { userData } from '@src/store/user-data';
 import InlineFlex from '@src/components/InlineFlex.vue';
 import { findWithQuery } from '@src/utils/find-with-query';
 import { convertToPlanetNaturalId } from '@src/core/planet-natural-id';
@@ -117,6 +118,8 @@ const excludeContractInbound = useTileState('excludeContractInbound');
 const excludePurchaseInbound = useTileState('excludePurchaseInbound');
 const buyContracts = useTileState('buyContracts');
 const managedProduction = useTileState('managedProduction');
+// COSM extras on/off. Off = rPrUn behaviour and numbers.
+const cosm = useTileState('cosm');
 const sortBy = useTileState('sortBy');
 const sortDesc = useTileState('sortDesc');
 const showColumnPicker = useTileState('showColumnPicker');
@@ -125,10 +128,13 @@ const { show: showCol, toggle: toggleColumn } = useBurnColumns();
 // Header cells in display order, for the resizable column widths.
 const columnKeys = computed(() => {
   const keys = ['mat'];
+  if (showCol.value.inv) {
+    keys.push('inv');
+  }
   if (showCol.value.burn) {
     keys.push(...(io.value ? ['in', 'out', 'burn'] : ['burn']));
   }
-  for (const key of ['inv', 'days', 'daysAll', 'need', 'invHrt', 'buy'] as const) {
+  for (const key of ['days', 'daysAll', 'need', 'invHrt', 'buy'] as const) {
     if (showCol.value[key]) {
       keys.push(key);
     }
@@ -159,7 +165,34 @@ function sortArrow(key: BurnSortKey) {
   return sortDesc.value ? ' ▼' : ' ▲';
 }
 
+// Same logic as rPrUn: own inbound ships only, no warehouse, partners, purchases or managed bases.
+function filterBurnOfficial(burn: BurnValues, naturalId: string): BurnValues {
+  const filtered: BurnValues = {};
+  for (const ticker of Object.keys(burn)) {
+    const mat = burn[ticker];
+    const hasProd = mat.input > 0 || mat.output > 0;
+    const hasWf = mat.workforce > 0;
+    if (!(hasProd && prod.value) && !(hasWf && wf.value)) {
+      continue;
+    }
+    if (excludeInbound.value.includes(naturalId)) {
+      const remaining = mat.inventory + mat.remainingAllocation;
+      filtered[ticker] = {
+        ...mat,
+        inboundInventory: 0,
+        daysLeft: mat.dailyAmount >= 0 ? Number.POSITIVE_INFINITY : remaining / -mat.dailyAmount,
+      };
+    } else {
+      filtered[ticker] = mat;
+    }
+  }
+  return filtered;
+}
+
 function filterBurn(burn: BurnValues, naturalId: string): BurnValues {
+  if (!cosm.value) {
+    return filterBurnOfficial(burn, naturalId);
+  }
   const filtered: BurnValues = {};
   const warehouse = getWarehouseAmounts(naturalId);
   // Read live from the home station WAR store; reactive, so it refreshes on every change.
@@ -326,10 +359,46 @@ function onExpandAllClick() {
 
 // Exports all materials regardless of active color filters (RED/YELLOW/GREEN/INF)
 // so spreadsheet users always get the complete dataset.
-function formatBurnTable(burns: PlanetBurn[]) {
+// Same export as rPrUn, used while the COSM extras are off.
+function formatBurnTableOfficial(burns: PlanetBurn[]) {
+  const resupply = userData.settings.burn.resupply;
   const header = io.value
-    ? `Planet\tTicker\tIn\tOut\tNet\tInv\tDays\tDays All\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
-    : `Planet\tTicker\tBurn/day\tInv\tDays\tDays All\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
+    ? 'Planet\tTicker\tInv\tIn\tOut\tNet\tNeed\tDays'
+    : 'Planet\tTicker\tInv\tBurn/day\tNeed\tDays';
+  const lines = [header];
+  const round = (x: number) => Math.round(x * 1000) / 1000;
+  for (const planet of burns) {
+    const sorted = getSortedTickers(planet);
+    for (const material of sorted) {
+      const mat = planet.burn[material.ticker];
+      const days = mat.dailyAmount >= 0 ? '' : Math.floor(mat.daysLeft).toString();
+      const burn = round(mat.dailyAmount);
+      const inv = mat.inventory + mat.inboundInventory + mat.remainingAllocation;
+      const need =
+        mat.dailyAmount >= 0 || mat.daysLeft > resupply
+          ? 0
+          : Math.ceil((mat.daysLeft - resupply) * mat.dailyAmount);
+      if (io.value) {
+        const inAmt = round(mat.input + mat.workforce);
+        const outAmt = round(mat.output);
+        lines.push(
+          `${planet.planetName}\t${material.ticker}\t${inv}\t${inAmt}\t${outAmt}\t${burn}\t${need}\t${days}`,
+        );
+      } else {
+        lines.push(`${planet.planetName}\t${material.ticker}\t${inv}\t${burn}\t${need}\t${days}`);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+function formatBurnTable(burns: PlanetBurn[]) {
+  if (!cosm.value) {
+    return formatBurnTableOfficial(burns);
+  }
+  const header = io.value
+    ? `Planet\tTicker\tInv\tIn\tOut\tNet\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
+    : `Planet\tTicker\tInv\tBurn/day\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
   const lines = [header];
   const round = (x: number) => Math.round(x * 1000) / 1000;
   for (const planet of burns) {
@@ -348,11 +417,11 @@ function formatBurnTable(burns: PlanetBurn[]) {
         const inAmt = round(mat.input + mat.workforce);
         const outAmt = round(mat.output);
         lines.push(
-          `${planet.planetName}\t${material.ticker}\t${inAmt}\t${outAmt}\t${burn}\t${inv}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
+          `${planet.planetName}\t${material.ticker}\t${inv}\t${inAmt}\t${outAmt}\t${burn}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
         );
       } else {
         lines.push(
-          `${planet.planetName}\t${material.ticker}\t${burn}\t${inv}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
+          `${planet.planetName}\t${material.ticker}\t${inv}\t${burn}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
         );
       }
     }
@@ -397,26 +466,37 @@ function copyBurnTable() {
       <RadioItem v-model="io" horizontal>I/O</RadioItem>
       <div :class="$style.separator" />
       <RadioItem
-        v-model="buyContracts"
+        v-model="cosm"
         horizontal
         :class="$style.radioItemWithTooltip"
-        data-tooltip="Count goods bought under accepted purchase contracts (BUY) that the seller has not delivered to the base yet. Turn off to ignore them."
+        data-tooltip="COSM extras: more columns (Days w/WAR, Need, home station stock, Buy), sorting and resizing, partner ships, purchase contracts and managed bases. Off = same as rPrUn."
         data-tooltip-position="bottom">
-        BUY CONT
+        COSM
       </RadioItem>
-      <div :class="$style.separator" />
-      <PrunButton
-        dark
-        inline
-        data-tooltip="Show or hide columns in this tile"
-        data-tooltip-position="bottom"
-        @click="showColumnPicker = !showColumnPicker">
-        COLS{{ hiddenCount > 0 ? ` (${hiddenCount} hidden)` : '' }}
-      </PrunButton>
+      <template v-if="cosm">
+        <div :class="$style.separator" />
+        <RadioItem
+          v-model="buyContracts"
+          horizontal
+          :class="$style.radioItemWithTooltip"
+          data-tooltip="Count goods bought under accepted purchase contracts (BUY) that the seller has not delivered to the base yet. Turn off to ignore them."
+          data-tooltip-position="bottom">
+          BUY CONT
+        </RadioItem>
+        <div :class="$style.separator" />
+        <PrunButton
+          dark
+          inline
+          data-tooltip="Show or hide columns in this tile"
+          data-tooltip-position="bottom"
+          @click="showColumnPicker = !showColumnPicker">
+          COLS{{ hiddenCount > 0 ? ` (${hiddenCount} hidden)` : '' }}
+        </PrunButton>
+      </template>
       <div :class="$style.spacer" />
       <CopyButton :copy-fn="copyBurnTable" data-tooltip-position="bottom" />
     </div>
-    <div v-if="showColumnPicker" :class="[C.ComExOrdersPanel.filter, $style.columnPicker]">
+    <div v-if="cosm && showColumnPicker" :class="[C.ComExOrdersPanel.filter, $style.columnPicker]">
       <span :class="$style.pickerLabel">Columns</span>
       <RadioItem
         v-for="col in BURN_COLUMNS"
@@ -427,8 +507,46 @@ function copyBurnTable() {
         {{ col.label }}
       </RadioItem>
     </div>
-    <table :class="{ [$style.fixedTable]: isFixed }" :style="tableStyle">
-      <thead>
+    <table :class="{ [$style.fixedTable]: cosm && isFixed }" :style="cosm ? tableStyle : undefined">
+      <thead v-if="!cosm">
+        <tr>
+          <th v-if="planetBurn.length > 1" :class="$style.expand" @click="onExpandAllClick">
+            {{ anyExpanded ? '-' : '+' }}
+          </th>
+          <th v-else />
+          <th>
+            <InlineFlex>
+              Inv
+              <Tooltip
+                position="right"
+                tooltip="Stock at the base plus cargo on inbound ships when enabled. Fractional amount
+                 represents the leftover materials since the last workforce consumption event." />
+            </InlineFlex>
+          </th>
+          <template v-if="io">
+            <th>In</th>
+            <th>Out</th>
+            <th>Net</th>
+          </template>
+          <th v-else>
+            <InlineFlex>
+              Burn
+              <Tooltip position="bottom" tooltip="How much of a material is consumed per day." />
+            </InlineFlex>
+          </th>
+          <th>
+            <InlineFlex>
+              Need
+              <Tooltip
+                position="bottom"
+                tooltip="How much of a material needs to be delivered to be fully supplied." />
+            </InlineFlex>
+          </th>
+          <th>Days</th>
+          <th>CMD</th>
+        </tr>
+      </thead>
+      <thead v-else>
         <tr :class="$style.headerRow">
           <th :class="$style.matHeader" data-col="mat" :style="colStyle('mat')">
             <span v-if="planetBurn.length > 1" :class="$style.expand" @click="onExpandAllClick">
@@ -443,6 +561,25 @@ function copyBurnTable() {
             <span
               :class="$style.resizer"
               @mousedown.stop.prevent="startResize($event, 'mat')"
+              @click.stop
+              @dblclick.stop="resetWidths" />
+          </th>
+          <th
+            v-if="showCol.inv"
+            :class="$style.sortable"
+            data-col="inv"
+            :style="colStyle('inv')"
+            @click="onSortClick('inv')">
+            <InlineFlex>
+              Inv{{ sortArrow('inv') }}
+              <Tooltip
+                position="right"
+                tooltip="Stock at the base plus cargo on inbound ships when enabled. Fractional amount
+                 represents the leftover materials since the last workforce consumption event." />
+            </InlineFlex>
+            <span
+              :class="$style.resizer"
+              @mousedown.stop.prevent="startResize($event, 'inv')"
               @click.stop
               @dblclick.stop="resetWidths" />
           </th>
@@ -493,25 +630,6 @@ function copyBurnTable() {
               @dblclick.stop="resetWidths" />
           </th>
           <th
-            v-if="showCol.inv"
-            :class="$style.sortable"
-            data-col="inv"
-            :style="colStyle('inv')"
-            @click="onSortClick('inv')">
-            <InlineFlex>
-              Inv{{ sortArrow('inv') }}
-              <Tooltip
-                position="right"
-                tooltip="Stock at the base plus cargo on inbound ships when enabled. Fractional amount
-                 represents the leftover materials since the last workforce consumption event." />
-            </InlineFlex>
-            <span
-              :class="$style.resizer"
-              @mousedown.stop.prevent="startResize($event, 'inv')"
-              @click.stop
-              @dblclick.stop="resetWidths" />
-          </th>
-          <th
             v-if="showCol.days"
             :class="$style.sortable"
             data-col="days"
@@ -531,7 +649,7 @@ function copyBurnTable() {
             :style="colStyle('daysAll')"
             @click="onSortClick('daysAll')">
             <span data-tooltip="Days left with the stock of the warehouse on the same planet."
-              >Days All{{ sortArrow('daysAll') }}</span
+              >Days w/WAR{{ sortArrow('daysAll') }}</span
             >
             <span
               :class="$style.resizer"
@@ -550,7 +668,7 @@ function copyBurnTable() {
               <Tooltip
                 position="bottom"
                 tooltip="How much to deliver to reach the resupply target, counting the base, inbound
-                 cargo and the warehouse on the same planet (same basis as Days All)." />
+                 cargo and the warehouse on the same planet (same basis as Days w/WAR)." />
             </InlineFlex>
             <span
               :class="$style.resizer"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getResupplyDays, MaterialBurn } from '@src/core/burn';
+import { computeNeed, getResupplyDays, MaterialBurn } from '@src/core/burn';
 import MaterialIcon from '@src/components/MaterialIcon.vue';
 import DaysCell from '@src/features/XIT/BURN/DaysCell.vue';
 import { fixed0, fixed1, fixed2, trunc0, trunc01, trunc02 } from '@src/utils/format';
@@ -77,6 +77,8 @@ const green = useTileState('green');
 const inf = useTileState('inf');
 const io = useTileState('io');
 const { show } = useBurnColumns();
+// Off: the rPrUn row, cell for cell, so other tiles that reuse it (XIT BS) line up.
+const cosm = useTileState('cosm');
 
 const isVisible = computed(() => {
   if (alwaysVisible) {
@@ -135,15 +137,52 @@ const usedTooltip = computed(() => {
 
 const resupplyDays = computed(() => getResupplyDays(naturalId));
 const needAmt = computed(() => computeNeedAll(burn, resupplyDays.value));
+const officialNeedAmt = computed(() => computeNeed(burn, resupplyDays.value));
 const buyAmt = computed(() => getBuyAmount(burn, resupplyDays.value));
 // HRT cannot cover the whole need.
 const hrtShort = computed(() => buyAmt.value > 0);
 </script>
 
 <template>
-  <tr v-if="isVisible">
+  <tr v-if="isVisible && !cosm">
+    <td :class="$style.materialContainer">
+      <MaterialIcon size="inline-table" :ticker="material.ticker" />
+    </td>
+    <td>
+      <span>
+        {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
+      </span>
+    </td>
+    <template v-if="io">
+      <td>
+        <span>{{ inText }}</span>
+      </td>
+      <td>
+        <span :class="outClass">{{ outText }}</span>
+      </td>
+      <td>
+        <span :class="changeClass">{{ changeText }}</span>
+      </td>
+    </template>
+    <td v-else>
+      <span :class="changeClass">{{ changeText }}</span>
+    </td>
+    <td>
+      <span>{{ isNaN(officialNeedAmt) ? '0' : fixed0(officialNeedAmt) }}</span>
+    </td>
+    <DaysCell :days="days" />
+    <td>
+      <PrunButton dark inline @click="showBuffer(`CXM ${material.ticker}`)">CXM</PrunButton>
+    </td>
+  </tr>
+  <tr v-else-if="isVisible">
     <td :class="$style.materialContainer">
       <MaterialIcon :class="$style.icon" size="inline-table" :ticker="material.ticker" />
+    </td>
+    <td v-if="show.inv">
+      <span :class="invClass" :data-tooltip="invTooltip">
+        {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
+      </span>
     </td>
     <template v-if="show.burn">
       <template v-if="io">
@@ -169,11 +208,6 @@ const hrtShort = computed(() => buyAmt.value > 0);
         </span>
       </td>
     </template>
-    <td v-if="show.inv">
-      <span :class="invClass" :data-tooltip="invTooltip">
-        {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
-      </span>
-    </td>
     <DaysCell v-if="show.days" :days="days" />
     <DaysCell v-if="show.daysAll" :days="daysAll" />
     <td v-if="show.need" :class="$style.supplyStart">
