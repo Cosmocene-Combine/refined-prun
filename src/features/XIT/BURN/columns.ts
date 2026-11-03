@@ -2,8 +2,8 @@ import { useTileState } from '@src/features/XIT/BURN/tile-state';
 
 // Columns that can be hidden in XIT BURN. CMD and the material icon always stay.
 export const BURN_COLUMNS = [
-  { id: 'burn', label: 'BURN' },
   { id: 'inv', label: 'INV' },
+  { id: 'burn', label: 'BURN' },
   { id: 'days', label: 'DAYS' },
   { id: 'daysAll', label: 'DAYS W/WAR' },
   { id: 'need', label: 'NEED' },

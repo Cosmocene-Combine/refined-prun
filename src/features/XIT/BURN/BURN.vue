@@ -128,10 +128,13 @@ const { show: showCol, toggle: toggleColumn } = useBurnColumns();
 // Header cells in display order, for the resizable column widths.
 const columnKeys = computed(() => {
   const keys = ['mat'];
+  if (showCol.value.inv) {
+    keys.push('inv');
+  }
   if (showCol.value.burn) {
     keys.push(...(io.value ? ['in', 'out', 'burn'] : ['burn']));
   }
-  for (const key of ['inv', 'days', 'daysAll', 'need', 'invHrt', 'buy'] as const) {
+  for (const key of ['days', 'daysAll', 'need', 'invHrt', 'buy'] as const) {
     if (showCol.value[key]) {
       keys.push(key);
     }
@@ -394,8 +397,8 @@ function formatBurnTable(burns: PlanetBurn[]) {
     return formatBurnTableOfficial(burns);
   }
   const header = io.value
-    ? `Planet\tTicker\tIn\tOut\tNet\tInv\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
-    : `Planet\tTicker\tBurn/day\tInv\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
+    ? `Planet\tTicker\tInv\tIn\tOut\tNet\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`
+    : `Planet\tTicker\tInv\tBurn/day\tDays\tDays w/WAR\tNeed\tInv ${homeStation.value.naturalId}\tBuy`;
   const lines = [header];
   const round = (x: number) => Math.round(x * 1000) / 1000;
   for (const planet of burns) {
@@ -414,11 +417,11 @@ function formatBurnTable(burns: PlanetBurn[]) {
         const inAmt = round(mat.input + mat.workforce);
         const outAmt = round(mat.output);
         lines.push(
-          `${planet.planetName}\t${material.ticker}\t${inAmt}\t${outAmt}\t${burn}\t${inv}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
+          `${planet.planetName}\t${material.ticker}\t${inv}\t${inAmt}\t${outAmt}\t${burn}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
         );
       } else {
         lines.push(
-          `${planet.planetName}\t${material.ticker}\t${burn}\t${inv}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
+          `${planet.planetName}\t${material.ticker}\t${inv}\t${burn}\t${days}\t${daysAll}\t${need}\t${invHrt}\t${buy}`,
         );
       }
     }
@@ -561,6 +564,25 @@ function copyBurnTable() {
               @click.stop
               @dblclick.stop="resetWidths" />
           </th>
+          <th
+            v-if="showCol.inv"
+            :class="$style.sortable"
+            data-col="inv"
+            :style="colStyle('inv')"
+            @click="onSortClick('inv')">
+            <InlineFlex>
+              Inv{{ sortArrow('inv') }}
+              <Tooltip
+                position="right"
+                tooltip="Stock at the base plus cargo on inbound ships when enabled. Fractional amount
+                 represents the leftover materials since the last workforce consumption event." />
+            </InlineFlex>
+            <span
+              :class="$style.resizer"
+              @mousedown.stop.prevent="startResize($event, 'inv')"
+              @click.stop
+              @dblclick.stop="resetWidths" />
+          </th>
           <template v-if="showCol.burn && io">
             <th data-col="in" :style="colStyle('in')">
               In
@@ -604,25 +626,6 @@ function copyBurnTable() {
             <span
               :class="$style.resizer"
               @mousedown.stop.prevent="startResize($event, 'burn')"
-              @click.stop
-              @dblclick.stop="resetWidths" />
-          </th>
-          <th
-            v-if="showCol.inv"
-            :class="$style.sortable"
-            data-col="inv"
-            :style="colStyle('inv')"
-            @click="onSortClick('inv')">
-            <InlineFlex>
-              Inv{{ sortArrow('inv') }}
-              <Tooltip
-                position="right"
-                tooltip="Stock at the base plus cargo on inbound ships when enabled. Fractional amount
-                 represents the leftover materials since the last workforce consumption event." />
-            </InlineFlex>
-            <span
-              :class="$style.resizer"
-              @mousedown.stop.prevent="startResize($event, 'inv')"
               @click.stop
               @dblclick.stop="resetWidths" />
           </th>

@@ -179,6 +179,11 @@ const hrtShort = computed(() => buyAmt.value > 0);
     <td :class="$style.materialContainer">
       <MaterialIcon :class="$style.icon" size="inline-table" :ticker="material.ticker" />
     </td>
+    <td v-if="show.inv">
+      <span :class="invClass" :data-tooltip="invTooltip">
+        {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
+      </span>
+    </td>
     <template v-if="show.burn">
       <template v-if="io">
         <td>
@@ -203,11 +208,6 @@ const hrtShort = computed(() => buyAmt.value > 0);
         </span>
       </td>
     </template>
-    <td v-if="show.inv">
-      <span :class="invClass" :data-tooltip="invTooltip">
-        {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
-      </span>
-    </td>
     <DaysCell v-if="show.days" :days="days" />
     <DaysCell v-if="show.daysAll" :days="daysAll" />
     <td v-if="show.need" :class="$style.supplyStart">
