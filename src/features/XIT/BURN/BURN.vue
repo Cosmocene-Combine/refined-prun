@@ -565,7 +565,7 @@ function copyBurnTable() {
             :style="colStyle('invHrt')"
             @click="onSortClick('invHrt')">
             <span
-              :data-tooltip="`Stock available in your warehouse (WAR) at ${homeStation.name}, updated live. Red when it cannot cover the need. Change the station in XIT SET COSM.`"
+              :data-tooltip="`Stock available in your warehouse (WAR) at ${homeStation.name}, updated live. Red when it cannot cover the need. Change the station in XIT SET EXTRA.`"
               >INV {{ homeStation.naturalId }}{{ sortArrow('invHrt') }}</span
             >
             <span

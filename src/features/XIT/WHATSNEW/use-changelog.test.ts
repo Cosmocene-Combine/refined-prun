@@ -3,7 +3,7 @@ import { userData } from '@src/store/user-data';
 import { useChangelog } from './use-changelog';
 
 vi.mock('@src/store/user-data', () => ({
-  userData: { lastSeenChangelogVersion: undefined, cosm: {} },
+  userData: { lastSeenChangelogVersion: undefined },
 }));
 
 vi.mock('../../../../CHANGELOG.md?raw', () => ({

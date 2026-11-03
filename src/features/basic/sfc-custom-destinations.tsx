@@ -20,8 +20,8 @@ function onTileReady(tile: PrunTile) {
         ))}
         <span
           class={$style.edit}
-          data-tooltip="Edit your destination shortcuts in XIT SET COSM."
-          onClick={() => showBuffer('XIT SET COSM')}>
+          data-tooltip="Edit your destination shortcuts in XIT SET EXTRA."
+          onClick={() => showBuffer('XIT SET EXTRA')}>
           {userData.cosm.sfcDestinations.length === 0 ? '+ MY DESTINATIONS' : '✎'}
         </span>
       </div>
@@ -36,5 +36,5 @@ function init() {
 features.add(
   import.meta.url,
   init,
-  'SFC: Adds your own destination shortcut buttons (XIT SET COSM) under the destination field.',
+  'SFC: Adds your own destination shortcut buttons (XIT SET EXTRA) under the destination field.',
 );

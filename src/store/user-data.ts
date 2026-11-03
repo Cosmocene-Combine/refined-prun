@@ -81,7 +81,7 @@ export const initialUserData = deepFreeze({
     folders: [] as UserData.TabFolder[],
   },
   commandLists: [] as UserData.CommandList[],
-  // COSM Edition settings (XIT SET > COSM).
+  // Extra settings (XIT SET > EXTRA). The key keeps its old name so saved settings survive.
   cosm: {
     // Natural id of the station whose warehouse and exchange are the player's trade hub.
     homeStation: 'HRT',
@@ -91,7 +91,7 @@ export const initialUserData = deepFreeze({
     actAutoClose: true,
     // XIT CONTC: deadlines in these hours (local clock) are shown in red. Off by default.
     quietHours: { enabled: false, start: 22, end: 8 },
-    // Last COSM Edition release shown in XIT WHATSNEW.
+    // Last extra changelog release shown in XIT WHATSNEW (used by the COSM build only).
     lastSeenVersion: undefined as string | undefined,
   },
   // XIT SUPPLY: bases left out (planet natural ids) and stock kept aside at HRT per ticker.

@@ -115,7 +115,7 @@ export interface HrtStock {
   free: number;
 }
 
-// Home station (XIT SET COSM) warehouse stock that is free to ship: not promised in my contracts
+// Home station (XIT SET EXTRA) warehouse stock that is free to ship: not promised in my contracts
 // and not kept aside in XIT SUPPLY.
 export function getHrtStock(): (ticker: string) => HrtStock {
   const hub = homeStation.value.naturalId;

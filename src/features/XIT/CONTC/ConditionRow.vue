@@ -20,7 +20,7 @@ function onFulfillClick(event: MouseEvent) {
   void fulfillCondition(event.currentTarget as Element, contract, condition, event.shiftKey);
 }
 
-// Optional quiet hours (XIT SET COSM): deadlines that fall in them are shown in red,
+// Optional quiet hours (XIT SET EXTRA): deadlines that fall in them are shown in red,
 // because nobody is there to fulfill the condition.
 const quiet = computed(() => userData.cosm.quietHours);
 
@@ -105,7 +105,7 @@ const eta = computed(() => {
 </template>
 
 <style module>
-/* The deadline falls in the quiet hours set in XIT SET COSM. */
+/* The deadline falls in the quiet hours set in XIT SET EXTRA. */
 .night {
   background-color: rgba(217, 83, 79, 0.45) !important;
   color: #fff !important;

@@ -4,6 +4,6 @@ xit.add({
   command: 'SUPPLY',
   name: 'SUPPLY',
   description:
-    'Inputs needed by all bases compared with your home station warehouse stock (XIT SET COSM).',
+    'Inputs needed by all bases compared with your home station warehouse stock (XIT SET EXTRA).',
   component: () => SUPPLY,
 });
