@@ -6,6 +6,7 @@ import FEAT from '@src/features/XIT/SET/FEAT.vue';
 import FIN from '@src/features/XIT/SET/FIN.vue';
 import BFR from '@src/features/XIT/SET/BFR.vue';
 import ACT from '@src/features/XIT/SET/ACT.vue';
+import EXTRA from '@src/features/XIT/SET/EXTRA.vue';
 
 const tabs: Tab[] = [
   {
@@ -33,12 +34,23 @@ const tabs: Tab[] = [
     label: 'ACT',
     component: ACT,
   },
+  {
+    id: 'EXTRA',
+    label: 'EXTRA',
+    component: EXTRA,
+  },
 ];
 
-const parameters = useXitParameters();
-const parameter = parameters[0];
+// Old tab names that still open the renamed tab.
+const aliases: Record<string, string> = {
+  COSM: 'EXTRA',
+};
 
-const activeTab = shallowRef(tabs.find(x => x.id === parameter?.toUpperCase()) ?? tabs[0]);
+const parameters = useXitParameters();
+const parameter = parameters[0]?.toUpperCase();
+const tabId = parameter !== undefined ? (aliases[parameter] ?? parameter) : undefined;
+
+const activeTab = shallowRef(tabs.find(x => x.id === tabId) ?? tabs[0]);
 </script>
 
 <template>

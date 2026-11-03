@@ -81,6 +81,33 @@ export const initialUserData = deepFreeze({
     folders: [] as UserData.TabFolder[],
   },
   commandLists: [] as UserData.CommandList[],
+  // Extra settings (XIT SET > EXTRA). The key keeps its old name so saved settings survive.
+  cosm: {
+    // Natural id of the station whose warehouse and exchange are the player's trade hub.
+    homeStation: 'HRT',
+    // SFC destination shortcut buttons (natural ids or names).
+    sfcDestinations: [] as string[],
+    // Closes a floating ACT window when its package finishes without errors.
+    actAutoClose: true,
+    // XIT CONTC: deadlines in these hours (local clock) are shown in red. Off by default.
+    quietHours: { enabled: false, start: 22, end: 8 },
+    // Last extra changelog release shown in XIT WHATSNEW (used by the COSM build only).
+    lastSeenVersion: undefined as string | undefined,
+  },
+  // XIT SUPPLY: bases left out (planet natural ids) and stock kept aside at HRT per ticker.
+  supply: {
+    excluded: [] as string[],
+    reserved: {} as Record<string, number>,
+  },
+  // CONTS: hidden columns, and player name per partner company code (from FIO or typed by hand).
+  conts: {
+    hiddenColumns: [] as string[],
+    players: {} as Record<string, string>,
+    // CONTD: favorite recipients, shown first when sending a contract draft.
+    favorites: [] as string[],
+    // Contract id -> partner player name (lower case), kept so old contracts still count.
+    partnerContracts: {} as Record<string, string>,
+  },
   govburn: {
     planets: {} as Record<string, UserData.GovBurnPlanet>,
     config: {

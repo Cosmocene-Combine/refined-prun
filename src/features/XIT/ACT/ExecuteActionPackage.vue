@@ -9,6 +9,9 @@ import LogWindow from '@src/features/XIT/ACT/LogWindow.vue';
 import ConfigWindow from '@src/features/XIT/ACT/ConfigureWindow.vue';
 import { ActionPackageConfig, ActionStep } from '@src/features/XIT/ACT/shared-types';
 import { act } from '@src/features/XIT/ACT/act-registry';
+import { userData } from '@src/store/user-data';
+import { closePrunWindow } from '@src/infrastructure/prun-ui/utils/close-prun-window';
+import { sleep } from '@src/utils/sleep';
 
 const { pkg, afterExecute, extraSteps } = defineProps<{
   pkg: UserData.ActionPackageData;
@@ -101,6 +104,7 @@ const runner = new ActionRunner({
     isRunning.value = false;
     status.value = undefined;
     afterExecute?.(config.value, logMessage);
+    void autoClose();
   },
   onStatusChanged: (title, keepReady) => {
     status.value = title;
@@ -135,6 +139,7 @@ async function onPreviewClick() {
 }
 
 function onExecuteClick() {
+  canceled = false;
   logScrolling.value = true;
   clearLog();
   actReady.value = false;
@@ -142,7 +147,28 @@ function onExecuteClick() {
   runner.execute(pkg, config.value, extraSteps);
 }
 
+// Set when the player cancels, so a canceled run never closes the window.
+let canceled = false;
+
+// Closes a floating ACT window after a clean run: no error, no skipped step, no cancel.
+async function autoClose() {
+  const clean =
+    !canceled && log.value.every(x => x.tag !== 'ERROR' && x.tag !== 'SKIP' && x.tag !== 'CANCEL');
+  canceled = false;
+  if (!clean || !userData.cosm.actAutoClose) {
+    return;
+  }
+  // Leave a moment to see the final log line.
+  await sleep(1500);
+  // A floating ACT window is split before the run, so its tile counts as docked:
+  // close the enclosing window. Tiles of a screen have no window and stay open.
+  if (!isRunning.value && tile.window?.isConnected) {
+    closePrunWindow(tile.window);
+  }
+}
+
 function onCancelClick() {
+  canceled = true;
   actReady.value = false;
   skipReady.value = false;
   runner.cancel();
