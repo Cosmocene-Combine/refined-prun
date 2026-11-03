@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "description": "Browser extension that simplifies the Prosperous Universe interface and adds useful features",
   "manifest_version": 3,
-  "minimum_chrome_version": "107",
+  "minimum_chrome_version": "121",
   "browser_specific_settings": {
     "gecko": {
       "id": "{c35c3edc-0acc-4531-b01c-35b6bede69fb}",
-      "strict_min_version": "116.0"
+      "strict_min_version": "121.0"
     }
   },
   "permissions": [
@@ -56,6 +56,9 @@
     }
   ],
   "background": {
-    "service_worker": "refined-prun-background.js"
+    "service_worker": "refined-prun-background.js",
+    "scripts": [
+      "refined-prun-background.js"
+    ]
   }
 }
