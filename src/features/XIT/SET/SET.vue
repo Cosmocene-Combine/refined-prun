@@ -41,10 +41,16 @@ const tabs: Tab[] = [
   },
 ];
 
-const parameters = useXitParameters();
-const parameter = parameters[0];
+// Old tab names that still open the renamed tab.
+const aliases: Record<string, string> = {
+  COSM: 'EXTRA',
+};
 
-const activeTab = shallowRef(tabs.find(x => x.id === parameter?.toUpperCase()) ?? tabs[0]);
+const parameters = useXitParameters();
+const parameter = parameters[0]?.toUpperCase();
+const tabId = parameter !== undefined ? (aliases[parameter] ?? parameter) : undefined;
+
+const activeTab = shallowRef(tabs.find(x => x.id === tabId) ?? tabs[0]);
 </script>
 
 <template>
