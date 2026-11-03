@@ -9,5 +9,21 @@ export const useTileState = createTileStateHook({
   wf: true,
   io: false,
   excludeInbound: [] as string[],
+  // Planets where partner ships (shipping contracts) are not counted.
+  excludeContractInbound: [] as string[],
+  // Planets where goods bought under purchase contracts are not counted.
+  excludePurchaseInbound: [] as string[],
+  // Count goods bought under purchase contracts at all (toolbar toggle).
+  buyContracts: true,
+  // Planets whose production inputs are supplied by someone else (managed bases):
+  // only workforce materials count there.
+  managedProduction: [] as string[],
   expand: [] as string[],
+  sortBy: '' as string,
+  sortDesc: false,
+  // Columns hidden in this tile (see columns.ts).
+  hiddenColumns: [] as string[],
+  showColumnPicker: false,
+  // Column widths in px set by dragging the header edges. Empty = automatic widths.
+  colWidths: {} as Record<string, number>,
 });

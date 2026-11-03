@@ -24,7 +24,7 @@ const dragTabId = 'drag';
 const activeParserStorageKey = 'rprun-contd-import-export-active';
 
 // An empty stored value means hidden; only an absent value uses the default.
-const activeParser = ref(localStorage.getItem(activeParserStorageKey) ?? '');
+const activeParser = ref(localStorage.getItem(activeParserStorageKey) ?? dragTabId);
 watch(activeParser, value => localStorage.setItem(activeParserStorageKey, value));
 
 // Restore the last visible tab when Show is clicked.
@@ -52,19 +52,23 @@ const textInstances = parserOptions.map(parser => {
 });
 
 const dragMaterials = ref<MaterialEntry[]>([]);
-const dragStatus = computed(() =>
-  dragMaterials.value.length > 0
-    ? `${dragMaterials.value.length} material${dragMaterials.value.length === 1 ? '' : 's'} ready.`
-    : '',
-);
+const dragStatus = computed(() => {
+  const count = dragMaterials.value.filter(x => x.amount > 0).length;
+  return count > 0 ? `${count} material${count === 1 ? '' : 's'} ready.` : '';
+});
 const dragInstance = {
   kind: 'drag' as const,
   id: dragTabId,
   label: 'Drag',
-  spec: computed<ContractDraftSpec>(() => ({ materials: dragMaterials.value })),
+  // Rows at 0 only explain why NEED sent nothing: they are not imported.
+  spec: computed<ContractDraftSpec>(() => ({
+    materials: dragMaterials.value
+      .filter(x => x.amount > 0)
+      .map(({ ticker, amount, price }) => ({ ticker, amount, price })),
+  })),
   status: dragStatus,
   isInvalid: computed(() => false),
-  canImport: computed(() => dragMaterials.value.length > 0),
+  canImport: computed(() => dragMaterials.value.some(x => x.amount > 0)),
 };
 
 const tabs = [...textInstances, dragInstance];

@@ -17,6 +17,47 @@ function isCheckpoint(entry: MigrationEntry): entry is Checkpoint {
 // The date is for reference only, and it does not affect migration order.
 const migrations: MigrationEntry[] = [
   [
+    '28.10.2026 Add COSM quiet hours',
+    userData => {
+      userData.cosm ??= {};
+      userData.cosm.quietHours ??= { enabled: false, start: 22, end: 8 };
+    },
+  ],
+  [
+    '26.10.2026 Add COSM Edition settings',
+    userData => {
+      userData.cosm ??= {};
+      userData.cosm.homeStation ??= 'HRT';
+      userData.cosm.sfcDestinations ??= [];
+      userData.cosm.actAutoClose ??= true;
+      userData.cosm.lastSeenVersion ??= undefined;
+    },
+  ],
+  [
+    '25.10.2026 Add CONTD favorite recipients',
+    userData => {
+      userData.conts ??= { hiddenColumns: [], players: {} };
+      userData.conts.favorites ??= [];
+      userData.conts.partnerContracts ??= {};
+    },
+  ],
+  [
+    '13.10.2026 Add CONTS columns and players',
+    userData => {
+      userData.conts ??= { hiddenColumns: [], players: {} };
+      userData.conts.hiddenColumns ??= [];
+      userData.conts.players ??= {};
+    },
+  ],
+  [
+    '11.10.2026 Add XIT SUPPLY settings',
+    userData => {
+      userData.supply ??= { excluded: [], reserved: {} };
+      userData.supply.excluded ??= [];
+      userData.supply.reserved ??= {};
+    },
+  ],
+  [
     '15.09.2026 Add govburn data',
     userData => {
       userData.govburn ??= { planets: {}, config: { planets: {} } };

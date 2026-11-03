@@ -6,6 +6,8 @@ import ConditionText from '@src/features/XIT/CONTC/ConditionText.vue';
 import PrunButton from '@src/components/PrunButton.vue';
 import { isFulfillable } from '@src/core/contract-conditions';
 import { fulfillCondition } from '@src/infrastructure/prun-ui/utils/fulfill-condition';
+import { userData } from '@src/store/user-data';
+import { hhmm } from '@src/utils/format';
 
 const { deadline, contract, condition } = defineProps<{
   condition: PrunApi.ContractCondition;
@@ -17,6 +19,43 @@ const { deadline, contract, condition } = defineProps<{
 function onFulfillClick(event: MouseEvent) {
   void fulfillCondition(event.currentTarget as Element, contract, condition, event.shiftKey);
 }
+
+// Optional quiet hours (XIT SET EXTRA): deadlines that fall in them are shown in red,
+// because nobody is there to fulfill the condition.
+const quiet = computed(() => userData.cosm.quietHours);
+
+const end = computed(() => (isFinite(deadline) ? new Date(deadline) : undefined));
+
+const endHour = computed(() => {
+  if (!end.value) {
+    return undefined;
+  }
+  // Local hour from 0 to 23 on the computer clock.
+  return end.value.getHours();
+});
+
+// The deadline falls in the night: nobody is there to fulfill the condition.
+const atNight = computed(() => {
+  const hour = endHour.value;
+  const { enabled, start, end: stop } = quiet.value;
+  if (!enabled || hour === undefined || deadline <= timestampEachSecond.value) {
+    return false;
+  }
+  // The quiet hours can cross midnight (20 to 10) or not (1 to 7).
+  return start > stop ? hour >= start || hour < stop : hour >= start && hour < stop;
+});
+
+const endTime = computed(() => {
+  if (!end.value) {
+    return undefined;
+  }
+  const day = end.value.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  });
+  return `Ends: ${day.replace(',', '')} at ${hhmm(end.value)}`;
+});
 
 const eta = computed(() => {
   if (!isFinite(deadline)) {
@@ -51,8 +90,8 @@ const eta = computed(() => {
     <td>
       <ContractLink :contract="contract" />
     </td>
-    <td>
-      {{ eta }}
+    <td :class="{ [$style.night]: atNight }">
+      <span :class="$style.eta" :data-tooltip="endTime">{{ eta }}</span>
     </td>
     <td>
       <ConditionText :condition="condition" />
@@ -66,6 +105,16 @@ const eta = computed(() => {
 </template>
 
 <style module>
+/* The deadline falls in the quiet hours set in XIT SET EXTRA. */
+.night {
+  background-color: rgba(217, 83, 79, 0.45) !important;
+  color: #fff !important;
+}
+
+.eta {
+  white-space: nowrap;
+}
+
 .fulfillCell {
   padding: 2px 4px;
   width: 0;

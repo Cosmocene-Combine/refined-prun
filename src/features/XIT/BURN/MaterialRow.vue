@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computeNeed, getResupplyDays, MaterialBurn } from '@src/core/burn';
+import { getResupplyDays, MaterialBurn } from '@src/core/burn';
 import MaterialIcon from '@src/components/MaterialIcon.vue';
 import DaysCell from '@src/features/XIT/BURN/DaysCell.vue';
 import { fixed0, fixed1, fixed2, trunc0, trunc01, trunc02 } from '@src/utils/format';
 import { useTileState } from '@src/features/XIT/BURN/tile-state';
-import { getBurnThresholds } from '@src/features/XIT/BURN/utils';
+import { useBurnColumns } from '@src/features/XIT/BURN/columns';
+import {
+  computeNeedAll,
+  getBurnThresholds,
+  getBuyAmount,
+  getDaysAll,
+} from '@src/features/XIT/BURN/utils';
 import PrunButton from '@src/components/PrunButton.vue';
 import { showBuffer } from '@src/infrastructure/prun-ui/buffers';
 
@@ -35,8 +41,33 @@ const invFraction = computed(() => {
   const dot = invAmount.value.indexOf('.');
   return dot === -1 ? '' : invAmount.value.slice(dot);
 });
+const $style = useCssModule();
+
+// Purple: part of the stock is on a partner ship. Blue: part is bought, not delivered yet.
+const partnerAmount = computed(() => burn.contractInventory ?? 0);
+const purchaseAmount = computed(() => burn.purchaseInventory ?? 0);
+const invClass = computed(() => ({
+  [$style.partner]: partnerAmount.value > 0,
+  [$style.purchase]: partnerAmount.value === 0 && purchaseAmount.value > 0,
+}));
+const invTooltip = computed(() => {
+  const parts: string[] = [];
+  if (partnerAmount.value > 0) {
+    parts.push(`${fixed0(partnerAmount.value)} on a partner ship`);
+  }
+  if (purchaseAmount.value > 0) {
+    parts.push(`${fixed0(purchaseAmount.value)} bought, not delivered yet`);
+  }
+  return parts.length > 0 ? `Includes ${parts.join(' and ')}` : undefined;
+});
+const hrtAmount = computed(() => burn.hrtInventory ?? 0);
+const hrtText = computed(() =>
+  hrtAmount.value >= 100 ? trunc0(hrtAmount.value) : trunc01(hrtAmount.value),
+);
 const isInf = computed(() => production.value >= 0);
 const days = computed(() => (isInf.value ? Number.POSITIVE_INFINITY : burn.daysLeft));
+
+const daysAll = computed(() => getDaysAll(burn));
 
 const thresholds = computed(() => getBurnThresholds(days.value));
 
@@ -45,6 +76,7 @@ const yellow = useTileState('yellow');
 const green = useTileState('green');
 const inf = useTileState('inf');
 const io = useTileState('io');
+const { show } = useBurnColumns();
 
 const isVisible = computed(() => {
   if (alwaysVisible) {
@@ -84,37 +116,78 @@ const outClass = computed(() => ({
   [C.ColoredValue.positive]: outAmount.value > 0,
 }));
 
-const needAmt = computed(() => computeNeed(burn, getResupplyDays(naturalId)));
+// A net producer that the base also uses: show the internal use next to the net value.
+const showUsed = computed(() => production.value > 0 && inAmount.value > 0);
+const usedText = computed(() => '-' + formatAmount(inAmount.value));
+const usedTooltip = computed(() => {
+  const parts: string[] = [];
+  if (burn.input > 0) {
+    parts.push(`production ${formatAmount(burn.input)}`);
+  }
+  if (burn.workforce > 0) {
+    parts.push(`workforce ${formatAmount(burn.workforce)}`);
+  }
+  return (
+    `Made +${formatAmount(outAmount.value)}/day, used -${formatAmount(inAmount.value)}/day ` +
+    `(${parts.join(', ')}), net ${changeText.value}/day`
+  );
+});
+
+const resupplyDays = computed(() => getResupplyDays(naturalId));
+const needAmt = computed(() => computeNeedAll(burn, resupplyDays.value));
+const buyAmt = computed(() => getBuyAmount(burn, resupplyDays.value));
+// HRT cannot cover the whole need.
+const hrtShort = computed(() => buyAmt.value > 0);
 </script>
 
 <template>
   <tr v-if="isVisible">
     <td :class="$style.materialContainer">
-      <MaterialIcon size="inline-table" :ticker="material.ticker" />
+      <MaterialIcon :class="$style.icon" size="inline-table" :ticker="material.ticker" />
     </td>
-    <td>
-      <span>
+    <template v-if="show.burn">
+      <template v-if="io">
+        <td>
+          <span>{{ inText }}</span>
+        </td>
+        <td>
+          <span :class="outClass">{{ outText }}</span>
+        </td>
+        <td>
+          <span :class="changeClass">{{ changeText }}</span>
+        </td>
+      </template>
+      <td v-else>
+        <span :class="changeClass">{{ changeText }}</span>
+        <span v-if="showUsed" :class="$style.usedSeparator">|</span>
+        <span
+          v-if="showUsed"
+          :class="$style.used"
+          :data-tooltip="usedTooltip"
+          data-tooltip-position="right">
+          {{ usedText }}
+        </span>
+      </td>
+    </template>
+    <td v-if="show.inv">
+      <span :class="invClass" :data-tooltip="invTooltip">
         {{ invWhole }}<span :class="$style.fraction">{{ invFraction }}</span>
       </span>
     </td>
-    <template v-if="io">
-      <td>
-        <span>{{ inText }}</span>
-      </td>
-      <td>
-        <span :class="outClass">{{ outText }}</span>
-      </td>
-      <td>
-        <span :class="changeClass">{{ changeText }}</span>
-      </td>
-    </template>
-    <td v-else>
-      <span :class="changeClass">{{ changeText }}</span>
+    <DaysCell v-if="show.days" :days="days" />
+    <DaysCell v-if="show.daysAll" :days="daysAll" />
+    <td v-if="show.need" :class="$style.supplyStart">
+      <span :class="{ [$style.empty]: needAmt === 0 }">{{ fixed0(needAmt) }}</span>
     </td>
-    <td>
-      <span>{{ isNaN(needAmt) ? '0' : fixed0(needAmt) }}</span>
+    <td v-if="show.invHrt">
+      <span :class="{ [$style.empty]: hrtAmount === 0, [$style.short]: hrtShort }">
+        {{ hrtText }}
+      </span>
     </td>
-    <DaysCell :days="days" />
+    <td v-if="show.buy">
+      <span v-if="buyAmt > 0" :class="$style.short">{{ fixed0(buyAmt) }}</span>
+      <span v-else :class="$style.empty">–</span>
+    </td>
     <td>
       <PrunButton dark inline @click="showBuffer(`CXM ${material.ticker}`)">CXM</PrunButton>
     </td>
@@ -122,12 +195,73 @@ const needAmt = computed(() => computeNeed(burn, getResupplyDays(naturalId)));
 </template>
 
 <style module>
+/* Internal use of a net producer, after a thin separator, in the row's text style. */
+.used {
+  white-space: nowrap;
+}
+
+.usedSeparator {
+  margin: 0 4px;
+  color: #666;
+}
+
 .materialContainer {
-  width: 32px;
-  padding: 0;
+  width: 44px;
+  padding: 1px 2px;
+}
+
+/* Same box for every ticker length, label centered. */
+.icon {
+  margin: 0 auto;
+
+  > div {
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > div {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+}
+
+.empty {
+  color: #666;
+}
+
+.short {
+  color: #d9534f;
+  font-weight: bold;
+}
+
+/* Separates the base situation from the resupply columns. */
+.supplyStart {
+  border-left: 1px solid #2b485a;
+}
+
+.partner {
+  color: #b57edc;
 }
 
 .fraction {
   color: #999;
+}
+
+/* The whole amount, decimals included, is purple when a partner ship brings some. */
+.purchase {
+  color: #3fa2de;
+}
+
+.partner .fraction,
+.purchase .fraction {
+  color: inherit;
 }
 </style>

@@ -111,7 +111,8 @@ function weightedAverage<T>(
 const ignored = computed(() => new Set(userData.settings.financial.ignoredMaterials.split(',')));
 const mmMaterials = computed(() => new Set(userData.settings.financial.mmMaterials.split(',')));
 
-export function getPrice(ticker?: string | null) {
+// Price with the method of XIT SET > Pricing. The exchange is the XIT SET one by default.
+export function getPrice(ticker?: string | null, exchangeCode?: UserData.Exchange) {
   if (!ticker) {
     return undefined;
   }
@@ -126,7 +127,7 @@ export function getPrice(ticker?: string | null) {
   }
 
   const pricing = userData.settings.pricing;
-  const exchange = cxStore.prices.get(pricing.exchange);
+  const exchange = cxStore.prices.get(exchangeCode ?? pricing.exchange);
   if (!exchange) {
     return undefined;
   }
