@@ -199,12 +199,14 @@ async function copyList() {
 
 const { copied: jsonCopied, copy: copyJson } = useClipboard();
 
-// One BUY contract for the checked missing inputs, priced with the price source of XIT SET.
+// One BUY contract for the checked missing inputs. Prices come from the exchange of the
+// home station, so they are in the currency of the contract.
 async function copyBuyJson() {
+  const exchange = homeStation.value.exchange;
   const materials = checkedMissing.value.map(x => ({
     ticker: x.ticker,
     amount: x.missing,
-    price: getPrice(x.ticker) ?? undefined,
+    price: getPrice(x.ticker, exchange) ?? undefined,
   }));
   await copyJson(buildBuyContractJson(homeStation.value, materials));
 }
