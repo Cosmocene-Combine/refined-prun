@@ -218,6 +218,51 @@ describe('getContractFlows', () => {
     expect(flows.reserved).toEqual({});
   });
 
+  it('keeps contracts past their deadline: they are still binding', () => {
+    const flows = getContractFlows(
+      [
+        contract('DEADLINE_EXCEEDED', [
+          condition({ ticker: 'RDE', qty: 28, address: at('HRT') }),
+          condition({ ticker: 'DW', qty: 10, party: 'CUSTOMER', address: at('HRT') }),
+        ]),
+      ],
+      'HRT',
+      naturalIdOf,
+    );
+    expect(flows.onOrder).toEqual({ RDE: 28 });
+    expect(flows.reserved).toEqual({ DW: 10 });
+  });
+
+  it('counts a partner shipment to HRT with the materials of its provisions', () => {
+    const provision = condition({
+      id: 'p1',
+      ticker: 'H',
+      qty: 300,
+      type: 'PROVISION_SHIPMENT',
+      party: 'CUSTOMER',
+      address: at('OZ-189c'),
+      status: 'FULFILLED',
+    });
+    const pickup = {
+      ...condition({ id: 'k1', ticker: 'H', qty: 0, type: 'PICKUP_SHIPMENT' }),
+      quantity: null,
+      dependencies: ['p1'],
+    } as PrunApi.ContractCondition;
+    const delivery = {
+      ...condition({ id: 'd1', ticker: 'H', qty: 0, type: 'DELIVERY_SHIPMENT' }),
+      quantity: null,
+      dependencies: ['k1'],
+      destination: at('HRT'),
+    } as PrunApi.ContractCondition;
+    const flows = getContractFlows(
+      [contract('CLOSED', [provision, pickup, delivery])],
+      'HRT',
+      naturalIdOf,
+    );
+    expect(flows.onOrder).toEqual({ H: 300 });
+    expect(flows.reserved).toEqual({});
+  });
+
   it('counts provided goods still waiting for my pickup', () => {
     const provided = condition({
       id: 'p1',

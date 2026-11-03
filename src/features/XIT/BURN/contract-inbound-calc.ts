@@ -19,7 +19,7 @@ export interface ContractInbound {
 const ACTIVE = new Set<string>(['CLOSED', 'PARTIALLY_FULFILLED', 'DEADLINE_EXCEEDED']);
 
 // Materials of one delivery: DELIVERY_SHIPMENT <- PICKUP_SHIPMENT <- PROVISION_SHIPMENT.
-function shipmentMaterials(contract: PrunApi.Contract, delivery: PrunApi.ContractCondition) {
+export function shipmentMaterials(contract: PrunApi.Contract, delivery: PrunApi.ContractCondition) {
   const byId = new Map(contract.conditions.map(x => [x.id, x]));
   const provisions: PrunApi.ContractCondition[] = [];
   for (const pickupId of delivery.dependencies) {

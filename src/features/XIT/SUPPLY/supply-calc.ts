@@ -1,6 +1,7 @@
 // Pure calculations for XIT SUPPLY. No store access here, so it can be unit tested.
 import type { BurnValues, MaterialBurn } from '@src/core/burn';
 import { computeNeedAll, getDaysAll } from '@src/features/XIT/BURN/need';
+import { shipmentMaterials } from '@src/features/XIT/BURN/contract-inbound-calc';
 
 export interface SupplyBase {
   naturalId: string;
@@ -241,8 +242,9 @@ export interface ContractFlows {
 }
 
 // Contracts in force: accepted by both sides and not finished.
-const ACTIVE_CONTRACTS = new Set<string>(['CLOSED', 'PARTIALLY_FULFILLED']);
-const INBOUND_TYPES = new Set<string>(['PROVISION', 'DELIVERY', 'DELIVERY_SHIPMENT']);
+// A contract past its deadline stays binding until it is fulfilled, breached or terminated.
+const ACTIVE_CONTRACTS = new Set<string>(['CLOSED', 'PARTIALLY_FULFILLED', 'DEADLINE_EXCEEDED']);
+const INBOUND_TYPES = new Set<string>(['PROVISION', 'DELIVERY']);
 const OUTBOUND_TYPES = new Set<string>(['PROVISION', 'DELIVERY', 'PROVISION_SHIPMENT']);
 
 function add(
@@ -273,8 +275,26 @@ export function getContractFlows(
     }
     const byId = new Map(contract.conditions.map(x => [x.id, x]));
     for (const condition of contract.conditions) {
+      if (condition.status === 'FULFILLED') {
+        continue;
+      }
+      const mine = condition.party === contract.party;
+      if (!mine && condition.type === 'DELIVERY_SHIPMENT') {
+        // A delivery has no quantity: its materials are on the linked provisions.
+        if (naturalIdOf(condition.destination ?? condition.address) !== location) {
+          continue;
+        }
+        for (const material of shipmentMaterials(contract, condition)) {
+          add(flows.onOrder, flows.onOrderLines, material.material.ticker, {
+            contract: contract.localId,
+            partner: contract.partner.name,
+            amount: material.amount,
+          });
+        }
+        continue;
+      }
       const quantity = condition.quantity;
-      if (!quantity || condition.status === 'FULFILLED') {
+      if (!quantity) {
         continue;
       }
       const ticker = quantity.material.ticker;
@@ -283,7 +303,6 @@ export function getContractFlows(
         partner: contract.partner.name,
         amount: quantity.amount,
       };
-      const mine = condition.party === contract.party;
       if (!mine && INBOUND_TYPES.has(condition.type)) {
         const where = naturalIdOf(condition.destination ?? condition.address);
         if (where === location) {
