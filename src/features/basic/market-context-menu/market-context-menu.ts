@@ -63,9 +63,6 @@ const store = reactive({
   },
   showBuffer(cmd: string) {
     this.hideMenu();
-    if (cmd === 'CONTD') {
-      return showBuffer('CONTD');
-    }
     if (cmd === 'CXM') {
       return showBuffer(`CXM ${this.materialID}`);
     } else if (['CXP', 'CXPC', 'CXPO', 'CXOB'].includes(cmd)) {
