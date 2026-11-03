@@ -10,7 +10,7 @@ import ConfigWindow from '@src/features/XIT/ACT/ConfigureWindow.vue';
 import { ActionPackageConfig, ActionStep } from '@src/features/XIT/ACT/shared-types';
 import { act } from '@src/features/XIT/ACT/act-registry';
 import { userData } from '@src/store/user-data';
-import { closeTileWindow } from '@src/infrastructure/prun-ui/utils/close-prun-window';
+import { closePrunWindow } from '@src/infrastructure/prun-ui/utils/close-prun-window';
 import { sleep } from '@src/utils/sleep';
 
 const { pkg, afterExecute, extraSteps } = defineProps<{
@@ -152,15 +152,18 @@ let canceled = false;
 
 // Closes a floating ACT window after a clean run: no error, no skipped step, no cancel.
 async function autoClose() {
-  const clean = !canceled && log.value.every(x => x.tag !== 'ERROR' && x.tag !== 'SKIP');
+  const clean =
+    !canceled && log.value.every(x => x.tag !== 'ERROR' && x.tag !== 'SKIP' && x.tag !== 'CANCEL');
   canceled = false;
   if (!clean || !userData.cosm.actAutoClose) {
     return;
   }
   // Leave a moment to see the final log line.
   await sleep(1500);
-  if (!isRunning.value) {
-    closeTileWindow(tile);
+  // A floating ACT window is split before the run, so its tile counts as docked:
+  // close the enclosing window. Tiles of a screen have no window and stay open.
+  if (!isRunning.value && tile.window?.isConnected) {
+    closePrunWindow(tile.window);
   }
 }
 
