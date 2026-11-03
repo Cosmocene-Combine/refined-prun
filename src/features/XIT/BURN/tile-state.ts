@@ -9,6 +9,9 @@ export const useTileState = createTileStateHook({
   wf: true,
   io: false,
   excludeInbound: [] as string[],
+  // COSM extras (more columns, sorting, partner ships, purchases, managed bases).
+  // Off by default so XIT BURN, and every place that reuses its rows, matches rPrUn.
+  cosm: false,
   // Planets where partner ships (shipping contracts) are not counted.
   excludeContractInbound: [] as string[],
   // Planets where goods bought under purchase contracts are not counted.

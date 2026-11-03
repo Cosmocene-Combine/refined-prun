@@ -6,8 +6,10 @@ import $style from './sfc-custom-destinations.module.css';
 
 function onTileReady(tile: PrunTile) {
   subscribe($$(tile.anchor, C.AddressSelector.container), container => {
+    // Same row as the ANT / BEN / HRT / MOR buttons, after a separator.
     createFragmentApp(() => (
-      <div class={$style.row}>
+      <div class={$style.buttons}>
+        <div class={$style.separator} />
         {userData.cosm.sfcDestinations.map(name => (
           <PrunButton
             key={name}
@@ -18,14 +20,16 @@ function onTileReady(tile: PrunTile) {
             {name}
           </PrunButton>
         ))}
-        <span
-          class={$style.edit}
-          data-tooltip="Edit your destination shortcuts in XIT SET EXTRA."
+        <PrunButton
+          dark
+          inline
+          class={$style.button}
+          data-tooltip="Your own destination shortcuts. Edit them in XIT SET EXTRA."
           onClick={() => showBuffer('XIT SET EXTRA')}>
-          {userData.cosm.sfcDestinations.length === 0 ? '+ MY DESTINATIONS' : '✎'}
-        </span>
+          +
+        </PrunButton>
       </div>
-    )).after(container);
+    )).appendTo(container);
   });
 }
 
@@ -36,5 +40,5 @@ function init() {
 features.add(
   import.meta.url,
   init,
-  'SFC: Adds your own destination shortcut buttons (XIT SET EXTRA) under the destination field.',
+  'SFC: Adds your own destination shortcut buttons (XIT SET EXTRA) next to the station buttons.',
 );

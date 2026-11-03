@@ -1,23 +1,21 @@
-.row {
+/* After the station buttons in the destination row, whatever order the features load in. */
+.buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
   align-items: center;
   gap: 3px;
-  margin-top: 3px;
+  order: 1;
+}
+
+.separator {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 2px;
+  background-color: #2b485a;
 }
 
 .button {
   margin: 0;
   padding-left: 5px;
   padding-right: 5px;
-}
-
-.edit {
-  color: #888;
-  font-size: 10px;
-  cursor: pointer;
-
-  &:hover {
-    color: #3fa2de;
-  }
 }
