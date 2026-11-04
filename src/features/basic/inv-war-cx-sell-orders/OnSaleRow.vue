@@ -59,12 +59,12 @@ function tooltip(item: OnSaleItem) {
       <div
         v-for="item in items"
         :key="item.ticker"
-        :class="[$style.item, item.undercut ? $style.undercut : $style.cheapest]"
+        :class="$style.item"
         :data-tooltip="tooltip(item)"
         data-tooltip-position="top"
         @click="showBuffer(`CXPO ${item.ticker}.${exchange}`)">
         <MaterialIcon :ticker="item.ticker" :amount="item.amount" />
-        <div :class="$style.price">
+        <div :class="[$style.price, item.undercut ? $style.undercut : $style.cheapest]">
           {{ formatPrice(item.price) }}
           <span v-if="item.undercut" :class="$style.best">▼{{ formatPrice(item.bestOther!) }}</span>
         </div>
@@ -97,9 +97,6 @@ function tooltip(item: OnSaleItem) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 3px;
-  border-radius: 3px;
-  border: 2px dashed;
   cursor: pointer;
 
   > div:first-child {
@@ -107,20 +104,19 @@ function tooltip(item: OnSaleItem) {
   }
 }
 
-.cheapest {
-  border-color: #5cb85c;
-}
-
-.undercut {
-  border-color: #d9534f;
-  background-color: rgba(217, 83, 79, 0.15);
-}
-
 .price {
   margin-top: 2px;
   font-size: 10px;
-  color: #eee;
   white-space: nowrap;
+}
+
+/* The price says the order status: green when cheapest, red when undercut. */
+.cheapest {
+  color: #5cb85c;
+}
+
+.undercut {
+  color: #d9534f;
 }
 
 .best {
