@@ -29,5 +29,5 @@ function init() {
 features.add(
   import.meta.url,
   init,
-  'INV: Shows my open sell orders under each exchange station warehouse, red when undercut.',
+  'INV: Shows my open sell orders under each exchange station warehouse, price in red when undercut.',
 );
