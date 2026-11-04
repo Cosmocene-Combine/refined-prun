@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import MaterialIcon from '@src/components/MaterialIcon.vue';
+import GridMaterialIcon from '@src/components/GridMaterialIcon.vue';
+import fa from '@src/utils/font-awesome.module.css';
 import { cxosStore } from '@src/infrastructure/prun-api/data/cxos';
 import { cxobStore } from '@src/infrastructure/prun-api/data/cxob';
 import { cxStore } from '@src/infrastructure/fio/cx';
@@ -34,17 +35,12 @@ function formatPrice(value: number) {
 }
 
 function tooltip(item: OnSaleItem) {
-  const lines = [`Selling ${fixed0(item.amount)} ${item.ticker} at ${formatPrice(item.price)}.`];
-  const source = item.live ? 'live order book' : 'price snapshot, up to ~15 min old';
   if (item.bestOther === undefined) {
-    lines.push(`No other seller found (${source}).`);
-  } else if (item.undercut) {
-    lines.push(`Undercut: another seller asks ${formatPrice(item.bestOther)} (${source}).`);
-  } else {
-    lines.push(`Cheapest seller. Next ask: ${formatPrice(item.bestOther)} (${source}).`);
+    return 'No other seller found';
   }
-  lines.push('Click to open CXPO.');
-  return lines.join('\n');
+  return item.undercut
+    ? `Undercut, best ask ${formatPrice(item.bestOther)}`
+    : `Cheapest, next ask ${formatPrice(item.bestOther)}`;
 }
 </script>
 
@@ -55,7 +51,8 @@ function tooltip(item: OnSaleItem) {
       <span v-if="!cxosStore.fetched.value"> · loading orders…</span>
       <span v-else-if="items.length === 0"> · no open sell order</span>
     </div>
-    <div v-if="items.length > 0" :class="$style.grid">
+    <!-- Same grid as the game inventory above, so sizes and spacing match. -->
+    <div v-if="items.length > 0" :class="C.InventoryView.grid">
       <div
         v-for="item in items"
         :key="item.ticker"
@@ -63,10 +60,12 @@ function tooltip(item: OnSaleItem) {
         :data-tooltip="tooltip(item)"
         data-tooltip-position="top"
         @click="showBuffer(`CXPO ${item.ticker}.${exchange}`)">
-        <MaterialIcon :ticker="item.ticker" :amount="item.amount" />
-        <div :class="[$style.price, item.undercut ? $style.undercut : $style.cheapest]">
-          {{ formatPrice(item.price) }}
-          <span v-if="item.undercut" :class="$style.best">▼{{ formatPrice(item.bestOther!) }}</span>
+        <GridMaterialIcon
+          :ticker="item.ticker"
+          :amount="item.amount"
+          :text="formatPrice(item.price)" />
+        <div :class="[$style.tag, fa.solid, item.undercut ? $style.undercut : $style.cheapest]">
+          {{ item.undercut ? '\uf063' : '\uf00c' }}
         </div>
       </div>
     </div>
@@ -86,17 +85,8 @@ function tooltip(item: OnSaleItem) {
   margin: 0 4px 4px;
 }
 
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 2px 4px 4px;
-}
-
 .item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
   cursor: pointer;
 
   > div:first-child {
@@ -104,23 +94,29 @@ function tooltip(item: OnSaleItem) {
   }
 }
 
-.price {
-  margin-top: 2px;
-  font-size: 10px;
-  white-space: nowrap;
+/* Order status, same look as the item markers: check when cheapest, arrow when undercut. */
+.tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 9px;
+  background: #29353f;
+  border: 1px solid #314b5f;
+  border-radius: 0 4px 4px 4px;
+  text-shadow: 1px 1px #222;
+  pointer-events: none;
 }
 
-/* The price says the order status: green when cheapest, red when undercut. */
 .cheapest {
   color: #5cb85c;
 }
 
 .undercut {
-  color: #d9534f;
-}
-
-.best {
-  margin-left: 3px;
   color: #d9534f;
 }
 </style>
