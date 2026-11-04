@@ -16,6 +16,7 @@ async function onTileReady(tile: PrunTile) {
 
   const contextBar = await $(tile.frame, C.ContextControls.container);
 
+  // On the left, so the game buttons such as SFC keep their place.
   createFragmentApp(() => {
     const id = locationNaturalId.value;
     if (!id) {
@@ -23,7 +24,7 @@ async function onTileReady(tile: PrunTile) {
     }
     const cmd = `LM ${id}`;
     return <ContextControlsItem cmd={cmd} onShiftClick={() => openCompanionBuffer(tile, cmd)} />;
-  }).appendTo(contextBar);
+  }).prependTo(contextBar);
 }
 
 function init() {
