@@ -40,6 +40,12 @@ import { homeStation } from '@src/core/home-station';
 import InlineFlex from '@src/components/InlineFlex.vue';
 import { findWithQuery } from '@src/utils/find-with-query';
 import { convertToPlanetNaturalId } from '@src/core/planet-natural-id';
+import { burnSuggestEnabled, suggestSite } from '@src/features/XIT/BURN/suggest';
+import { useTile } from '@src/hooks/use-tile';
+import { UI_TILES_CHANGE_COMMAND } from '@src/infrastructure/prun-api/client-messages';
+import { dispatchClientPrunMessage } from '@src/infrastructure/prun-api/prun-api-listener';
+import { showBuffer } from '@src/infrastructure/prun-ui/buffers';
+import { getEntityNaturalIdFromAddress } from '@src/infrastructure/prun-api/data/addresses';
 
 const parameters = useXitParameters();
 
@@ -60,6 +66,15 @@ const queryResult = computed(() => {
     };
   }
   const result = findWithQuery(parameters, findSites);
+  if (burnSuggestEnabled.value && result.includeAll && !result.excludeAll) {
+    // Nothing typed matched a base: say so instead of showing every base.
+    return {
+      sites: [],
+      includeOverall: false,
+      overallOnly: false,
+      unknown: parameters.join(' '),
+    };
+  }
   let matches = result.include;
   if (result.includeAll) {
     matches = allSites;
@@ -91,6 +106,24 @@ const queryResult = computed(() => {
     overallOnly,
   };
 });
+
+const tile = useTile();
+const suggestion = computed(() => {
+  const unknown =
+    queryResult.value && 'unknown' in queryResult.value ? queryResult.value.unknown : undefined;
+  if (unknown === undefined) {
+    return undefined;
+  }
+  return { typed: unknown, match: suggestSite(unknown, sitesStore.all.value ?? []) };
+});
+
+function openSuggestion(site: PrunApi.Site) {
+  const naturalId = getEntityNaturalIdFromAddress(site.address);
+  const command = `XIT BURN_${naturalId}`;
+  if (!dispatchClientPrunMessage(UI_TILES_CHANGE_COMMAND(tile.id, command))) {
+    void showBuffer(command);
+  }
+}
 
 function findSites(term: string, parts: string[]) {
   if (term === 'all') {
@@ -370,6 +403,15 @@ function copyBurnTable() {
 
 <template>
   <LoadingSpinner v-if="planetBurn === undefined" />
+  <div v-else-if="suggestion" :class="$style.notFound">
+    No base matches "{{ suggestion.typed }}".
+    <template v-if="suggestion.match">
+      Did you mean
+      <a :class="$style.suggestion" @click="openSuggestion(suggestion.match.site)">
+        {{ suggestion.match.label }}</a
+      >?
+    </template>
+  </div>
   <template v-else>
     <div :class="C.ComExOrdersPanel.filter">
       <RadioItem v-model="red" horizontal>RED</RadioItem>
@@ -614,6 +656,16 @@ function copyBurnTable() {
 </template>
 
 <style module>
+.notFound {
+  padding: 10px;
+}
+
+.suggestion {
+  cursor: pointer;
+  color: #3fa2de;
+  font-weight: bold;
+}
+
 .fakeRow {
   visibility: collapse;
 }
