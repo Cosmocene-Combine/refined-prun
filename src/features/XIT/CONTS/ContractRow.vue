@@ -4,6 +4,7 @@ import MaterialList from '@src/features/XIT/CONTS/MaterialList.vue';
 import PartnerLink from '@src/features/XIT/CONTS/PartnerLink.vue';
 import ConditionList from '@src/features/XIT/CONTS/ConditionList.vue';
 import { isPartnerCondition, isSelfCondition } from '@src/features/XIT/CONTS/utils';
+import { contsCollapseEnabled } from '@src/features/XIT/CONTS/collapse';
 
 const { contract } = defineProps<{ contract: PrunApi.Contract }>();
 
@@ -11,9 +12,12 @@ const self = computed(() => contract.conditions.filter(x => isSelfCondition(cont
 const partner = computed(() => contract.conditions.filter(x => isPartnerCondition(contract, x)));
 
 // Long cells show the first entries only; one click expands the whole row.
+// The xit-conts-collapse feature (XIT SET FEAT) can turn this off.
 const expanded = ref(false);
-const limit = computed(() => (expanded.value ? undefined : 3));
-const toggle = () => (expanded.value = !expanded.value);
+const limit = computed(() => (!contsCollapseEnabled.value || expanded.value ? undefined : 3));
+const toggle = computed(() =>
+  contsCollapseEnabled.value ? () => (expanded.value = !expanded.value) : undefined,
+);
 </script>
 
 <template>
