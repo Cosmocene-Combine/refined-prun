@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FilterRow from '@src/components/FilterRow.vue';
 import { useColumnResize } from '@src/features/XIT/BURN/column-resize';
 import CopyButton from '@src/components/CopyButton.vue';
 import RadioItem from '@src/components/forms/RadioItem.vue';
@@ -371,7 +372,7 @@ function copyBurnTable() {
 <template>
   <LoadingSpinner v-if="planetBurn === undefined" />
   <template v-else>
-    <div :class="C.ComExOrdersPanel.filter">
+    <FilterRow>
       <RadioItem v-model="red" horizontal>RED</RadioItem>
       <RadioItem v-model="yellow" horizontal>YELLOW</RadioItem>
       <RadioItem v-model="green" horizontal>GREEN</RadioItem>
@@ -415,8 +416,8 @@ function copyBurnTable() {
       </PrunButton>
       <div :class="$style.spacer" />
       <CopyButton :copy-fn="copyBurnTable" data-tooltip-position="bottom" />
-    </div>
-    <div v-if="showColumnPicker" :class="[C.ComExOrdersPanel.filter, $style.columnPicker]">
+    </FilterRow>
+    <FilterRow v-if="showColumnPicker" :class="$style.columnPicker">
       <span :class="$style.pickerLabel">Columns</span>
       <RadioItem
         v-for="col in BURN_COLUMNS"
@@ -426,7 +427,7 @@ function copyBurnTable() {
         @update:model-value="toggleColumn(col.id)">
         {{ col.label }}
       </RadioItem>
-    </div>
+    </FilterRow>
     <table :class="{ [$style.fixedTable]: isFixed }" :style="tableStyle">
       <thead>
         <tr :class="$style.headerRow">
