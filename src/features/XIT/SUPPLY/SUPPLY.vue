@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FilterRow from '@src/components/FilterRow.vue';
 import RadioItem from '@src/components/forms/RadioItem.vue';
 import PrunButton from '@src/components/PrunButton.vue';
 import LoadingSpinner from '@src/components/LoadingSpinner.vue';
@@ -339,7 +340,7 @@ function formatWeight(value: number) {
 <template>
   <LoadingSpinner v-if="allBases === undefined" />
   <template v-else>
-    <div :class="[C.ComExOrdersPanel.filter, $style.bar]">
+    <FilterRow :class="$style.bar">
       <span :class="$style.label">Target</span>
       <RadioItem v-for="t in TARGETS" :key="t" v-model="targetModels[t].value" horizontal>
         {{ t === 'SET' ? 'SET' : `${t}d` }}
@@ -419,7 +420,7 @@ function formatWeight(value: number) {
         @click="copyBuyJson">
         BUY JSON
       </PrunButton>
-    </div>
+    </FilterRow>
     <div v-if="excludedBases.length > 0" :class="$style.hiddenBar">
       <span :class="$style.label">
         <span data-tooltip="Bases left out of the table. Click one to show it again.">
