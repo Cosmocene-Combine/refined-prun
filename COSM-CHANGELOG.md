@@ -1,5 +1,12 @@
 # COSM Edition Changelog
 
+## 26.11.71
+
+### Fixed
+
+- Includes rPrUn 26.11.12, with the fixes for the latest game update: `XIT ACT` (MTRA and CONT actions no longer get stuck on material selection), `CONTD`, `CXO`, `CXOB`, `CXPO`, `FLT` and the filter bars of the XIT tiles
+- `XIT SUPPLY`: The filter bar layout works again after the game update
+
 ## 26.10.70
 
 ### Changed
