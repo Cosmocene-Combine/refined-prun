@@ -107,6 +107,7 @@ A production line is a set of identical buildings (e.g., 3 FRM = 1 production li
 - Players queue orders in production lines via PRODCO command.
 - Specify: primary output commodity, order size, input materials.
 - Order size scales production time and material consumption proportionally.
+- One material can be both a recipe input and a workforce consumable at the same base (e.g., FIM = 2 RAT + 1 HER → 2 FIM, and the workforce also eats RAT). The extension burn (`src/core/burn.ts`) keeps the `input` and `workforce` parts of a ticker apart; logic that must keep a recipe ratio must not use only the net `dailyAmount`.
 - Maximum queue: 5 pending orders; active orders = building count in line.
 - Efficiency multipliers applied based: building condition, worker availability, worker satisfaction, experts, CoGC programs, soil fertility.
 - Production halts if: no workers, no consumables, no inputs, insufficient production fees, insufficient funds, not enough space for output.

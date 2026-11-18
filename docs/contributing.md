@@ -182,6 +182,10 @@ The extension does make some background server requests (e.g., `XIT BURN` opens 
 
 Don't modify `CHANGELOG.md` in PRs. The maintainer adds changelog notes right before merging. This avoids merge conflicts.
 
+### Line Endings
+
+All files use LF (`.editorconfig`). On Windows, a Python script that writes in text mode (`open(p, 'w')`) changes `\n` to CRLF, and `prettier/prettier` then reports one warning per line. Write with `open(p, 'w', newline='\n')`, or use the Edit tool.
+
 ### Import Sorting
 
 Don't enable auto-import-sorting in your editor. It creates merge conflicts when the same file is touched in two branches. Import sorting should be project-wide (via eslint/prettier), not per-editor.
