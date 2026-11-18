@@ -451,6 +451,28 @@ showSuccessOverlay(event); // Uses the localized default message.
 showSuccessOverlay(event, 'Package renamed.');
 ```
 
+### Game Action Feedback
+
+After a server action, the game shows an `ActionFeedback` overlay ("Action succeeded!", click to dismiss).
+It is in `tile.frame` (it also covers the context controls), not in the tile body. Search `tile.frame`.
+
+To wait for the result or close a green overlay, use `waitActionFeedback` from
+`@src/infrastructure/prun-ui/utils/action-feedback` (as XIT ACT and `cont-fulfill-next` do):
+
+```ts
+const { result, message } = await waitActionFeedback(tile.frame, { dismissSuccess: true });
+```
+
+A click on the overlay only closes it: nothing goes to the server. Leave error overlays open for the player.
+
+### Waiting for Game Results
+
+Don't add fixed pauses (`sleep(300)`) after a game action. Wait for the result in the DOM (the new row,
+the open window, the overlay) with a timeout. A fixed pause is too long when the game is fast and too short when it is slow.
+
+`subscribe($$(...))` has no unsubscribe: the watcher lives as long as the node. Don't use it for something
+that must stop, for example only while an import runs.
+
 ---
 
 ## CSS

@@ -161,6 +161,35 @@ declare namespace UserData {
     screenIds: string[];
   }
 
+  // A saved plan of XIT ROUTEBURNS: the settings of one tour.
+  interface RouteBurnsPreset {
+    id: string;
+    name: string;
+    tank: 'STL' | 'FTL';
+    // Id of a ship size from core/ship-sizes. Empty means no ship chosen.
+    ship: string;
+    days: number;
+    keep: number;
+    balance: boolean;
+    // The waypoints in the order the ship visits them.
+    route: string[];
+    // A flag for each waypoint of the route: true is a hub. Missing: only the first one is a hub.
+    hubs?: boolean[];
+    // A base can use what an earlier base of its segment made. Missing: off.
+    transfer?: boolean;
+    // The materials that the ship neither brings to nor picks up from a base. The key is the natural id
+    // of the base. Missing: all materials are on.
+    off?: Record<string, string[]>;
+  }
+
+  // The settings of one tour, without a name. XIT ROUTEBURNS keeps the current ones in userData
+  // because a floating buffer does not keep tile state when it is split to open RT beside it.
+  // hideText and hideLog are only for the view of the tile: presets do not keep them.
+  type RouteBurnsSettings = Omit<RouteBurnsPreset, 'id' | 'name'> & {
+    hideText?: boolean;
+    hideLog?: boolean;
+  };
+
   interface GovBurnPlanet {
     naturalId: string;
     name: string;

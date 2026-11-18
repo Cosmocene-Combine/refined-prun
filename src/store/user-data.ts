@@ -92,6 +92,11 @@ export const initialUserData = deepFreeze({
     },
   },
 
+  routeBurns: {
+    presets: [] as UserData.RouteBurnsPreset[],
+    work: {} as Partial<UserData.RouteBurnsSettings>,
+  },
+
   // Used in user-data-migrations.ts
   migrations: undefined,
 });
